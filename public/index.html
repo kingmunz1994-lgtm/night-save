@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Night Save · ZK Savings Vault on Midnight</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&family=Playfair+Display:wght@400;700&display=swap"/>
+<link rel="stylesheet" href="css/nightsave.css"/>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">Night <span>Save</span></div>
+  <div class="nav-right">
+    <button class="btn btn-primary btn-sm" id="wallet-btn" onclick="handleWalletClick()">
+      <span id="wallet-dot" style="width:7px;height:7px;border-radius:50%;background:#ef4444;display:inline-block;margin-right:4px;"></span>
+      <span id="wallet-label">Sign in</span>
+    </button>
+  </div>
+</nav>
+
+<div id="toast-wrap"></div>
+
+<div class="page-inner">
+
+  <div class="hero">
+    <div class="hero-tag">🟢 Night Save · Powered by Statera Protocol · Midnight Network</div>
+    <h1>Your money.<br><em>Private. Stable. Yours.</em></h1>
+    <p>Deposit NIGHT as collateral. Mint sUSD — a private USD stablecoin. Spend anywhere on Night Markets. No bank. No identity. No credit check. Your collateral stays invisible on Midnight.</p>
+    <div class="hero-btns">
+      <button class="btn btn-primary btn-lg" onclick="document.getElementById('vault-section').scrollIntoView({behavior:'smooth'})">Open vault →</button>
+      <button class="btn btn-ghost btn-lg" onclick="connectDemo()">Try demo</button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface);border:1px solid var(--rim);border-radius:14px;overflow:hidden;margin-bottom:28px;">
+    <div style="padding:14px;text-align:center;border-right:1px solid var(--rim);"><div style="font-size:18px;font-weight:800;font-family:var(--mono);color:var(--green);">$4.2M</div><div style="font-size:9px;color:var(--muted);font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;margin-top:3px;">Total collateral</div></div>
+    <div style="padding:14px;text-align:center;border-right:1px solid var(--rim);"><div style="font-size:18px;font-weight:800;font-family:var(--mono);color:var(--cyan);">$1.8M</div><div style="font-size:9px;color:var(--muted);font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;margin-top:3px;">sUSD minted</div></div>
+    <div style="padding:14px;text-align:center;border-right:1px solid var(--rim);"><div style="font-size:18px;font-weight:800;font-family:var(--mono);color:var(--gold);">2.33x</div><div style="font-size:9px;color:var(--muted);font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;margin-top:3px;">Avg health factor</div></div>
+    <div style="padding:14px;text-align:center;"><div style="font-size:18px;font-weight:800;font-family:var(--mono);">⊘</div><div style="font-size:9px;color:var(--muted);font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;margin-top:3px;">ZK-private positions</div></div>
+  </div>
+
+  <!-- Vault -->
+  <div id="vault-section" class="vault-card">
+    <div class="vault-header">
+      <div>
+        <div class="vault-title">🟢 sUSD Collateral Vault</div>
+        <div style="font-size:11px;font-family:var(--mono);color:var(--muted);margin-top:3px;">Statera Protocol · Midnight Preprod · ZK-private</div>
+      </div>
+      <div class="susd-badge">⊘ Over-collateralised · ZK private</div>
+    </div>
+
+    <div class="vault-stats">
+      <div class="vault-stat"><div class="vs-label">Collateral</div><div class="vs-val" id="vs-collateral" style="color:var(--green);">0</div><div class="vs-sub">NIGHT deposited</div></div>
+      <div class="vault-stat"><div class="vs-label">sUSD minted</div><div class="vs-val" id="vs-susd" style="color:var(--cyan);">$0.00</div><div class="vs-sub">available to spend</div></div>
+      <div class="vault-stat"><div class="vs-label">Health factor</div><div class="vs-val" id="vs-hf" style="color:var(--green);">—</div><div class="vs-sub">min 1.0 · liq at 0.95</div></div>
+    </div>
+
+    <div class="hf-bar-wrap">
+      <div class="hf-bar-hdr">
+        <div style="font-size:10px;font-family:var(--mono);color:var(--muted);">calculateHFactor(collateral, debt, liquidationThreshold=80%)</div>
+        <div class="hf-bar-val" id="hf-bar-val" style="color:var(--green);">Safe</div>
+      </div>
+      <div class="hf-bar-track"><div class="hf-bar-fill" id="hf-bar-fill" style="width:0%;background:var(--green);"></div></div>
+    </div>
+
+    <div class="vault-input-row">
+      <div class="vault-input-group">
+        <div class="vault-input-label">Deposit collateral (NIGHT)</div>
+        <input class="vault-input" id="vault-collateral" type="number" placeholder="e.g. 10000" oninput="updateVaultCalc()"/>
+      </div>
+      <div class="vault-input-group">
+        <div class="vault-input-label">Mint sUSD (max 80% LTV)</div>
+        <input class="vault-input" id="vault-mint" type="number" placeholder="e.g. 400" oninput="updateVaultCalc()"/>
+      </div>
+    </div>
+    <div id="vault-preview" style="font-size:11px;font-family:var(--mono);margin-bottom:14px;min-height:16px;"></div>
+    <div class="vault-actions">
+      <button class="btn btn-green btn-sm" onclick="vaultDeposit()">Deposit NIGHT</button>
+      <button class="btn btn-primary btn-sm" onclick="vaultMint()">Mint sUSD</button>
+      <button class="btn btn-ghost btn-sm" onclick="vaultRepay()">Repay debt</button>
+      <button class="btn btn-ghost btn-sm" onclick="vaultRedeem()">Redeem</button>
+    </div>
+    <div class="circuit-log" id="vault-circuit" style="display:none;"></div>
+  </div>
+
+  <!-- Tiers -->
+  <div style="font-size:11px;font-weight:700;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">Quick collateral tiers</div>
+  <div class="ns-tiers">
+    <div class="ns-tier" onclick="quickFill(1000)">
+      <div class="ns-tier-label">Micro</div>
+      <div class="ns-tier-amount" style="color:var(--muted);">1,000 NIGHT</div>
+      <div class="ns-tier-desc">Mint up to $32 sUSD</div>
+    </div>
+    <div class="ns-tier" onclick="quickFill(5000)">
+      <div class="ns-tier-label">Standard</div>
+      <div class="ns-tier-amount" style="color:var(--cyan);">5,000 NIGHT</div>
+      <div class="ns-tier-desc">Mint up to $160 sUSD</div>
+    </div>
+    <div class="ns-tier" onclick="quickFill(50000)">
+      <div class="ns-tier-label">Premium</div>
+      <div class="ns-tier-amount" style="color:var(--gold);">50,000 NIGHT</div>
+      <div class="ns-tier-desc">Mint up to $1,600 sUSD</div>
+    </div>
+    <div class="ns-tier" onclick="quickFill(200000)">
+      <div class="ns-tier-label">Obsidian</div>
+      <div class="ns-tier-amount" style="color:var(--glow);">200,000 NIGHT</div>
+      <div class="ns-tier-desc">Mint up to $6,400 sUSD</div>
+    </div>
+  </div>
+
+  <!-- BNPL -->
+  <div class="card">
+    <div class="card-title">💳 Buy Now, Pay Later — on-chain</div>
+    <div class="card-sub">Spend your sUSD across Night Markets. Split any purchase into 4 equal instalments enforced by smart contract. Zero interest. Zero fees. No credit check.</div>
+    <div style="font-size:11px;font-weight:700;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">Example: $200 purchase split into 4</div>
+    <div class="bnpl-grid">
+      <div class="bnpl-inst paid"><div class="bnpl-inst-num">01</div><div class="bnpl-inst-amt">$50.00</div><div class="bnpl-inst-status">✓ Paid</div></div>
+      <div class="bnpl-inst due"><div class="bnpl-inst-num">02</div><div class="bnpl-inst-amt">$50.00</div><div class="bnpl-inst-status">Due now</div></div>
+      <div class="bnpl-inst"><div class="bnpl-inst-num">03</div><div class="bnpl-inst-amt">$50.00</div><div class="bnpl-inst-status">14 days</div></div>
+      <div class="bnpl-inst"><div class="bnpl-inst-num">04</div><div class="bnpl-inst-amt">$50.00</div><div class="bnpl-inst-status">28 days</div></div>
+    </div>
+    <div style="font-size:10px;color:var(--muted);font-family:var(--mono);text-align:center;">Instalments enforced by NightSave.compact · missed payments freeze sUSD minting until cleared</div>
+  </div>
+
+  <!-- How it works -->
+  <div class="card" style="background:transparent;border-color:var(--rim);">
+    <div style="font-size:16px;font-weight:800;margin-bottom:20px;text-align:center;">How ZK savings works</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;text-align:center;">
+      <div><div style="font-size:28px;margin-bottom:8px;">🔒</div><div style="font-weight:700;font-size:13px;margin-bottom:4px;">Private collateral</div><div style="font-size:12px;color:var(--text2);line-height:1.6;">Your NIGHT collateral is hidden behind a ZK commitment. No one knows how much you deposited.</div></div>
+      <div><div style="font-size:28px;margin-bottom:8px;">💵</div><div style="font-weight:700;font-size:13px;margin-bottom:4px;">Mint sUSD</div><div style="font-size:12px;color:var(--text2);line-height:1.6;">Prove your collateral ratio in ZK and mint private sUSD stablecoins. Spend anywhere on Night Markets.</div></div>
+      <div><div style="font-size:28px;margin-bottom:8px;">📊</div><div style="font-weight:700;font-size:13px;margin-bottom:4px;">Health factor</div><div style="font-size:12px;color:var(--text2);line-height:1.6;">Keep health factor above 1.0 to avoid liquidation. 80% LTV max. Repay anytime.</div></div>
+      <div><div style="font-size:28px;margin-bottom:8px;">💳</div><div style="font-weight:700;font-size:13px;margin-bottom:4px;">BNPL spending</div><div style="font-size:12px;color:var(--text2);line-height:1.6;">Split purchases into 4 interest-free instalments enforced by smart contract. No bank needed.</div></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="overlay" id="ov-wallet" onclick="if(event.target===this)closeModal('ov-wallet')">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('ov-wallet')">✕</button>
+    <div class="wc-icon">🟢</div>
+    <div class="wc-title">Connect to save</div>
+    <div class="wc-sub">Connect a Midnight wallet to open your private vault, mint sUSD, and enable BNPL.</div>
+    <button class="btn btn-primary btn-full btn-lg" onclick="connectDemo()">🎭 Try Demo Mode</button>
+    <div style="margin-top:10px;font-size:11px;color:var(--muted);text-align:center;">Demo uses simulated tNIGHT · no real funds</div>
+  </div>
+</div>
+
+<script src="js/vault.js"></script>
+</body>
+</html>

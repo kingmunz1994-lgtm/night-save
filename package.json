@@ -1,0 +1,16 @@
+{
+  "name": "night-save",
+  "version": "0.1.0",
+  "description": "ZK Savings Vault on Midnight — private collateral, mint sUSD, BNPL",
+  "scripts": {
+    "dev": "npx serve public -p 3005",
+    "compile": "compactc contracts/NightSave.compact src/nightsave_contract/"
+  },
+  "dependencies": {
+    "@midnight-ntwrk/compact-runtime": "^1.0.0",
+    "@midnight-ntwrk/dapp-connector-api": "^2.0.0"
+  },
+  "devDependencies": {
+    "serve": "^14.2.0"
+  }
+}

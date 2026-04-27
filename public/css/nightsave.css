@@ -1,0 +1,178 @@
+/* ── Night Save — ZK Savings Vault ─────────────────────────── */
+:root {
+  --bg:      #050308;
+  --surface: #0d0a1a;
+  --raised:  #120f20;
+  --depth:   #080511;
+  --ink:     #7c3aed;
+  --glow:    #a78bfa;
+  --plasma:  #c084fc;
+  --green:   #00d68f;
+  --red:     #ef4444;
+  --gold:    #f5c518;
+  --cyan:    #06b6d4;
+  --rim:     rgba(255,255,255,.07);
+  --rim2:    rgba(255,255,255,.12);
+  --text:    #f1f0f5;
+  --text2:   #9ca3af;
+  --muted:   #4b5563;
+  --faint:   #374151;
+  --sans:    'Inter', system-ui, sans-serif;
+  --mono:    'JetBrains Mono', 'Fira Code', monospace;
+  --serif:   'Playfair Display', Georgia, serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; overflow-x: hidden; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(5,3,8,.92); border-bottom: 1px solid var(--rim);
+  backdrop-filter: blur(16px);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px; height: 56px;
+}
+.nav-logo { font-family: var(--serif); font-size: 20px; font-style: italic; cursor: pointer; }
+.nav-logo span { color: var(--green); }
+.nav-right { display: flex; align-items: center; gap: 10px; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 18px; border-radius: 10px;
+  font-size: 13px; font-weight: 700; font-family: var(--sans);
+  border: 1px solid transparent; cursor: pointer; transition: all .18s; white-space: nowrap;
+}
+.btn-primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+.btn-primary:hover { background: #6d28d9; }
+.btn-ghost { background: transparent; color: var(--text2); border-color: var(--rim2); }
+.btn-ghost:hover { color: var(--text); border-color: var(--glow); }
+.btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
+.btn-lg { padding: 13px 28px; font-size: 15px; }
+.btn-full { width: 100%; justify-content: center; }
+.btn-green { background: var(--green); color: #000; border-color: var(--green); }
+.btn-green:hover { opacity: .9; }
+.btn-red { background: rgba(239,68,68,.15); color: #f87171; border-color: rgba(239,68,68,.3); }
+
+.page-inner { max-width: 900px; margin: 0 auto; padding: 40px 24px; }
+
+.hero { text-align: center; margin-bottom: 40px; }
+.hero-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 700; font-family: var(--mono);
+  background: rgba(0,214,143,.08); color: var(--green);
+  border: 1px solid rgba(0,214,143,.2);
+  padding: 4px 12px; border-radius: 20px; margin-bottom: 18px;
+}
+.hero h1 { font-family: var(--serif); font-size: clamp(36px,5vw,60px); font-style: italic; line-height: 1.05; margin-bottom: 14px; }
+.hero h1 em { color: var(--green); }
+.hero p { font-size: 15px; color: var(--text2); max-width: 520px; margin: 0 auto 24px; line-height: 1.8; font-weight: 300; }
+.hero-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+/* ── Vault card ───────────────────────────────────────────────── */
+.vault-card {
+  background: var(--surface); border: 1px solid var(--rim);
+  border-radius: 20px; padding: 28px; margin-bottom: 24px;
+  position: relative; overflow: hidden;
+}
+.vault-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--ink), var(--green), var(--cyan));
+}
+.vault-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 8px; }
+.vault-title { font-size: 16px; font-weight: 800; margin-bottom: 3px; }
+.susd-badge {
+  font-size: 10px; font-family: var(--mono); font-weight: 700;
+  background: rgba(0,214,143,.08); color: var(--green);
+  border: 1px solid rgba(0,214,143,.2); padding: 4px 10px; border-radius: 8px;
+}
+.vault-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 20px; }
+.vault-stat { text-align: center; padding: 12px; background: var(--raised); border: 1px solid var(--rim); border-radius: 12px; }
+.vs-label { font-size: 9px; font-family: var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 6px; }
+.vs-val { font-size: 22px; font-weight: 800; font-family: var(--mono); }
+.vs-sub { font-size: 10px; color: var(--muted); margin-top: 3px; }
+
+/* ── Health factor bar ────────────────────────────────────────── */
+.hf-bar-wrap { margin-bottom: 20px; }
+.hf-bar-hdr { display: flex; justify-content: space-between; align-items: center; font-size: 10px; font-family: var(--mono); color: var(--muted); margin-bottom: 6px; }
+.hf-bar-track { background: var(--depth); border-radius: 6px; height: 8px; overflow: hidden; }
+.hf-bar-fill { height: 100%; border-radius: 6px; transition: width .4s, background .4s; }
+
+/* ── Vault inputs ─────────────────────────────────────────────── */
+.vault-input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+.vault-input-group { display: flex; flex-direction: column; gap: 5px; }
+.vault-input-label { font-size: 10px; font-weight: 700; font-family: var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .8px; }
+.vault-input {
+  background: var(--raised); border: 1px solid var(--rim2);
+  color: var(--text); border-radius: 10px; padding: 10px 14px;
+  font-size: 13px; font-family: var(--mono); outline: none; width: 100%;
+  transition: border-color .15s;
+}
+.vault-input:focus { border-color: var(--green); }
+.vault-actions { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
+
+/* ── Tier quick-fill cards ────────────────────────────────────── */
+.ns-tiers { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 24px; }
+.ns-tier {
+  background: var(--surface); border: 1px solid var(--rim);
+  border-radius: 12px; padding: 14px; text-align: center; cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.ns-tier:hover { border-color: var(--rim2); background: var(--raised); }
+.ns-tier-label { font-size: 10px; font-family: var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 6px; }
+.ns-tier-amount { font-size: 16px; font-weight: 800; font-family: var(--mono); margin-bottom: 4px; }
+.ns-tier-desc { font-size: 10px; color: var(--text2); }
+
+/* ── BNPL section ─────────────────────────────────────────────── */
+.card {
+  background: var(--surface); border: 1px solid var(--rim);
+  border-radius: 18px; padding: 24px; margin-bottom: 16px;
+}
+.card-title { font-size: 18px; font-weight: 800; margin-bottom: 6px; }
+.card-sub { font-size: 13px; color: var(--text2); margin-bottom: 20px; line-height: 1.6; }
+.bnpl-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin: 16px 0; }
+.bnpl-inst {
+  background: var(--raised); border: 1px solid var(--rim); border-radius: 10px;
+  padding: 12px; text-align: center;
+}
+.bnpl-inst.paid { border-color: rgba(0,214,143,.3); }
+.bnpl-inst.due  { border-color: rgba(245,197,24,.3); }
+.bnpl-inst-num { font-size: 10px; font-family: var(--mono); color: var(--muted); margin-bottom: 4px; }
+.bnpl-inst-amt { font-size: 16px; font-weight: 800; font-family: var(--mono); margin-bottom: 4px; }
+.bnpl-inst-status { font-size: 10px; color: var(--muted); }
+.bnpl-inst.paid .bnpl-inst-status { color: var(--green); }
+.bnpl-inst.due  .bnpl-inst-status { color: var(--gold); }
+
+/* ── Circuit log ─────────────────────────────────────────────── */
+.circuit-log {
+  background: var(--depth); border: 1px solid var(--rim); border-radius: 12px;
+  padding: 16px; margin-top: 16px; font-size: 12px; font-family: var(--mono);
+  color: var(--text2); display: flex; flex-direction: column; gap: 6px;
+}
+.ct-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; }
+.ct-dot.wait { background: var(--faint); }
+.ct-dot.active { background: var(--green); animation: pulse 1s infinite; }
+.ct-dot.done { background: var(--green); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* ── Toast / Modal ───────────────────────────────────────────── */
+#toast-wrap { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+.toast { padding: 12px 18px; border-radius: 12px; font-size: 13px; font-weight: 600; background: var(--surface); border: 1px solid var(--rim2); animation: slideIn .2s ease; max-width: 320px; }
+.toast.success { border-color: rgba(0,214,143,.4); color: var(--green); }
+.toast.error   { border-color: rgba(239,68,68,.4);  color: #f87171; }
+.toast.info    { border-color: rgba(6,182,212,.4);  color: var(--cyan); }
+@keyframes slideIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+.overlay { position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:20px; }
+.overlay.open { display:flex; }
+.modal { background:var(--surface);border:1px solid var(--rim2);border-radius:20px;padding:32px;max-width:420px;width:100%;position:relative; }
+.modal-close { position:absolute;top:16px;right:16px;background:transparent;border:none;color:var(--muted);font-size:18px;cursor:pointer; }
+.wc-icon { font-size:40px;text-align:center;margin-bottom:12px; }
+.wc-title { font-family:var(--serif);font-size:24px;font-style:italic;text-align:center;margin-bottom:8px; }
+.wc-sub { font-size:13px;color:var(--text2);text-align:center;margin-bottom:20px;line-height:1.6; }
+
+@media(max-width:640px) {
+  .vault-stats, .vault-actions { grid-template-columns: 1fr 1fr; }
+  .ns-tiers { grid-template-columns: 1fr 1fr; }
+  .bnpl-grid { grid-template-columns: 1fr 1fr; }
+  .vault-input-row { grid-template-columns: 1fr; }
+}
