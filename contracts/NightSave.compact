@@ -25,92 +25,101 @@ export ledger total_susd:       Map<Bytes<32>, Uint<64>>; // key "ts"
 export ledger bnpl_count:    Map<Bytes<32>, Uint<8>>;  // commit → instalments paid
 export ledger bnpl_total:    Map<Bytes<32>, Uint<8>>;  // commit → total instalments (4)
 
-witness localSecretKey(): Bytes<32>;
+witness localSecretKey():   Bytes<32>;
 witness callerCollateral(): Uint<64>;
 witness callerDebt():       Uint<64>;
+witness bnplInstalment():   Uint<64>;
 
 circuit callerCommitment(): Bytes<32> {
   const sk = localSecretKey();
   return persistentHash<Vector<2, Bytes<32>>>([kernel.self().bytes, sk]);
 }
 
-circuit calculateHF(col: Uint<64>, debt: Uint<64>): Uint<64> {
-  if (debt == 0) { return 9_999; }
-  const colUSD = col * 4 / 100;
-  return (colUSD * 80) / debt;
-}
-
-export circuit deposit(amount: Uint<64>): Void {
-  assert(amount > 0, "deposit must be positive");
-  const commit = callerCommitment();
-  const cur    = collateral.member(commit) ? collateral.lookup(commit) : 0;
-  collateral.insert(commit, cur + amount);
-  const tc = total_collateral.member(pad(32,"tc")) ? total_collateral.lookup(pad(32,"tc")) : 0;
-  total_collateral.insert(pad(32,"tc"), tc + amount);
-}
-
-export circuit mintSusd(amount: Uint<64>): Void {
-  assert(amount > 0, "mint must be positive");
-  const commit = callerCommitment();
-  const col    = collateral.member(commit) ? collateral.lookup(commit) : 0;
-  const debt   = susd_debt.member(commit)  ? susd_debt.lookup(commit)  : 0;
-  const colUSD = col * 4 / 100;
-  const maxMint = (colUSD * 80) / 100;
-  assert(debt + amount <= maxMint, "exceeds 80% LTV");
-  susd_debt.insert(commit, debt + amount);
-  const ts = total_susd.member(pad(32,"ts")) ? total_susd.lookup(pad(32,"ts")) : 0;
-  total_susd.insert(pad(32,"ts"), ts + amount);
-}
-
-export circuit repay(amount: Uint<64>): Void {
-  const commit = callerCommitment();
-  const debt   = susd_debt.member(commit) ? susd_debt.lookup(commit) : 0;
-  assert(debt > 0, "no debt to repay");
-  const repaid = amount > debt ? debt : amount;
-  susd_debt.insert(commit, debt - repaid);
-  const ts = total_susd.member(pad(32,"ts")) ? total_susd.lookup(pad(32,"ts")) : 0;
-  total_susd.insert(pad(32,"ts"), ts > repaid ? ts - repaid : 0);
-}
-
-export circuit redeem(amount: Uint<64>): Void {
-  const commit = callerCommitment();
-  const col    = collateral.member(commit) ? collateral.lookup(commit) : 0;
-  const debt   = susd_debt.member(commit)  ? susd_debt.lookup(commit)  : 0;
-  assert(debt == 0, "repay sUSD debt first");
-  assert(col >= amount, "insufficient collateral");
-  collateral.insert(commit, col - amount);
-  const tc = total_collateral.member(pad(32,"tc")) ? total_collateral.lookup(pad(32,"tc")) : 0;
-  total_collateral.insert(pad(32,"tc"), tc > amount ? tc - amount : 0);
-}
-
-export circuit proveHealthy(): Boolean {
-  const commit = callerCommitment();
-  const col    = callerCollateral();
-  const debt   = callerDebt();
-  assert(collateral.lookup(commit) == col, "collateral mismatch");
-  assert(susd_debt.lookup(commit)  == debt, "debt mismatch");
-  const hf = calculateHF(col, debt);
-  assert(hf >= 100, "health factor below 1.0");
+export circuit deposit(amount: Uint<64>): Boolean {
+  const amt    = disclose(amount);
+  const commit = disclose(callerCommitment());
+  assert(amt > 0, "deposit must be positive");
+  const cur = collateral.member(commit) ? collateral.lookup(commit) : (0 as Uint<64>);
+  collateral.insert(commit, (cur + amt) as Uint<64>);
+  const tc = total_collateral.member(pad(32,"tc")) ? total_collateral.lookup(pad(32,"tc")) : (0 as Uint<64>);
+  total_collateral.insert(pad(32,"tc"), (tc + amt) as Uint<64>);
   return true;
 }
 
-export circuit createBnpl(totalAmount: Uint<64>): Void {
-  const commit = callerCommitment();
-  const instalment = totalAmount / 4;
-  bnpl_schedule.insert(commit, totalAmount);
-  bnpl_count.insert(commit, 0);
-  bnpl_total.insert(commit, 4);
-  susd_debt.insert(commit, (susd_debt.member(commit) ? susd_debt.lookup(commit) : 0) + instalment);
+export circuit mintSusd(amount: Uint<64>): Boolean {
+  const amt    = disclose(amount);
+  const commit = disclose(callerCommitment());
+  assert(amt > 0, "mint must be positive");
+  const col  = collateral.member(commit) ? collateral.lookup(commit) : (0 as Uint<64>);
+  const debt = susd_debt.member(commit)  ? susd_debt.lookup(commit)  : (0 as Uint<64>);
+  assert((debt + amt) * 10000 <= col * 320, "exceeds 80% LTV");
+  susd_debt.insert(commit, (debt + amt) as Uint<64>);
+  const ts = total_susd.member(pad(32,"ts")) ? total_susd.lookup(pad(32,"ts")) : (0 as Uint<64>);
+  total_susd.insert(pad(32,"ts"), (ts + amt) as Uint<64>);
+  return true;
 }
 
-export circuit payBnplInstalment(): Void {
-  const commit = callerCommitment();
-  const paid   = bnpl_count.member(commit) ? bnpl_count.lookup(commit) : 0;
-  const total  = bnpl_total.member(commit) ? bnpl_total.lookup(commit) : 4;
+export circuit repay(amount: Uint<64>): Boolean {
+  const amt    = disclose(amount);
+  const commit = disclose(callerCommitment());
+  const debt   = susd_debt.member(commit) ? susd_debt.lookup(commit) : (0 as Uint<64>);
+  assert(debt > 0, "no debt to repay");
+  const repaid = amt > debt ? debt : amt;
+  susd_debt.insert(commit, (debt - repaid) as Uint<64>);
+  const ts = total_susd.member(pad(32,"ts")) ? total_susd.lookup(pad(32,"ts")) : (0 as Uint<64>);
+  assert(ts >= repaid, "protocol underflow");
+  total_susd.insert(pad(32,"ts"), (ts - repaid) as Uint<64>);
+  return true;
+}
+
+export circuit redeem(amount: Uint<64>): Boolean {
+  const amt    = disclose(amount);
+  const commit = disclose(callerCommitment());
+  const col    = collateral.member(commit) ? collateral.lookup(commit) : (0 as Uint<64>);
+  const debt   = susd_debt.member(commit)  ? susd_debt.lookup(commit)  : (0 as Uint<64>);
+  assert(debt == 0, "repay sUSD debt first");
+  assert(col >= amt, "insufficient collateral");
+  collateral.insert(commit, (col - amt) as Uint<64>);
+  const tc = total_collateral.member(pad(32,"tc")) ? total_collateral.lookup(pad(32,"tc")) : (0 as Uint<64>);
+  assert(tc >= amt, "protocol underflow");
+  total_collateral.insert(pad(32,"tc"), (tc - amt) as Uint<64>);
+  return true;
+}
+
+export circuit proveHealthy(): Boolean {
+  const commit = disclose(callerCommitment());
+  const col    = disclose(callerCollateral());
+  const debt   = disclose(callerDebt());
+  assert(collateral.lookup(commit) == col, "collateral mismatch");
+  assert(susd_debt.lookup(commit)  == debt, "debt mismatch");
+  assert(col * 32 >= debt * 1000, "health factor below 1.0");
+  return true;
+}
+
+export circuit createBnpl(totalAmount: Uint<64>): Boolean {
+  const total  = disclose(totalAmount);
+  const commit = disclose(callerCommitment());
+  const instalment = disclose(bnplInstalment());
+  assert(instalment * 4 == total, "invalid instalment");
+  bnpl_schedule.insert(commit, total);
+  bnpl_count.insert(commit, 0 as Uint<8>);
+  bnpl_total.insert(commit, 4 as Uint<8>);
+  const prevDebt = susd_debt.member(commit) ? susd_debt.lookup(commit) : (0 as Uint<64>);
+  susd_debt.insert(commit, (prevDebt + instalment) as Uint<64>);
+  return true;
+}
+
+export circuit payBnplInstalment(): Boolean {
+  const commit = disclose(callerCommitment());
+  const paid   = bnpl_count.member(commit) ? bnpl_count.lookup(commit) : (0 as Uint<8>);
+  const total  = bnpl_total.member(commit) ? bnpl_total.lookup(commit) : (4 as Uint<8>);
   assert(paid < total, "all instalments paid");
-  bnpl_count.insert(commit, paid + 1);
-  const schedule = bnpl_schedule.member(commit) ? bnpl_schedule.lookup(commit) : 0;
-  const instalment = schedule / 4;
-  const debt = susd_debt.member(commit) ? susd_debt.lookup(commit) : 0;
-  susd_debt.insert(commit, debt > instalment ? debt - instalment : 0);
+  bnpl_count.insert(commit, (paid + 1) as Uint<8>);
+  const schedule   = bnpl_schedule.member(commit) ? bnpl_schedule.lookup(commit) : (0 as Uint<64>);
+  const instalment = disclose(bnplInstalment());
+  assert(instalment * 4 <= schedule, "invalid instalment");
+  const debt = susd_debt.member(commit) ? susd_debt.lookup(commit) : (0 as Uint<64>);
+  assert(debt >= instalment, "debt less than instalment");
+  susd_debt.insert(commit, (debt - instalment) as Uint<64>);
+  return true;
 }
