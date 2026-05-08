@@ -1,5 +1,18 @@
 // ── Night Save — ZK Savings Vault ─────────────────────────────
 
+const NIGHT_ID_API = 'https://night-markets-94-production.up.railway.app';
+async function recordAction(points) {
+  const addr = walletState?.address;
+  if (!addr) return;
+  try {
+    await fetch(`${NIGHT_ID_API}/api/nightid/record-action`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ holderAddress: addr, appId: 'night-save', points }),
+    });
+  } catch (_) {}
+}
+
 var NS_API = 'http://127.0.0.1:3001';
 var _apiReady = null;
 async function apiCheck() {
@@ -146,6 +159,7 @@ async function vaultDeposit() {
     }
     saveVault(); renderVault();
     toast(`✓ ${col.toLocaleString()} NIGHT deposited`, 'success');
+    recordAction(10);
   });
 }
 
