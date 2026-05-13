@@ -182,6 +182,7 @@ async function vaultMint() {
     }
     saveVault(); renderVault();
     toast(`✓ $${mint.toFixed(2)} sUSD minted`, 'success');
+    recordAction(20);
   });
 }
 
@@ -197,6 +198,7 @@ async function vaultRepay() {
     } catch {}
     _vaultState.debt = 0; saveVault(); renderVault();
     toast('✓ sUSD debt fully repaid', 'success');
+    recordAction(10);
   });
 }
 
@@ -213,6 +215,7 @@ async function vaultRedeem() {
     } catch {}
     _vaultState.collateral = 0; saveVault(); renderVault();
     toast('✓ Collateral redeemed', 'success');
+    recordAction(5);
   });
 }
 
